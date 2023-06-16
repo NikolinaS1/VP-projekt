@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="nav">
+      <a href="" class="logo"
+        >Mortality of football players during football matches in the period
+        1889 - today</a
+      >
+
+      <a href="viz2.html"
+        ><button class="button2">
+          <span>Back to main page</span>
+        </button>
+      </a>
+    </nav>
+
+    <div class="graf"></div>
+    <div class="tooltip"></div>
+
+    <script>
+      var margin = { top: 30, bottom: 320, left: 150, right: 50 };
+      var width = 1200 - margin.left - margin.right;
+      var height = 600 - margin.top - margin.bottom;
+
+      var linePath = "";
+
+      d3.json("deaths.json", function (error, data) {
+        var barPadding = 6;
+        var barWidth = width / data.length - barPadding;
+
+        var godine = [
+          { Raspon: "1889-1896", Num: 0 },
+          { Raspon: "1897-1904", Num: 0 },
+          { Raspon: "1905-1912", Num: 0 },
+          { Raspon: "1913-1920", Num: 0 },
+          { Raspon: "1921-1928", Num: 0 },
+          { Raspon: "1929-1936", Num: 0 },
+          { Raspon: "1937-1944", Num: 0 },
+          { Raspon: "1945-1952", Num: 0 },
+          { Raspon: "1953-1960", Num: 0 },
+          { Raspon: "1961-1968", Num: 0 },
+          { Raspon: "1969-1976", Num: 0 },
+          { Raspon: "1977-1984", Num: 0 },
+          { Raspon: "1985-1992", Num: 0 },
+          { Raspon: "1993-2000", Num: 0 },
+          { Raspon: "2001-2008", Num: 0 },
+          { Raspon: "2009-2017", Num: 0 },
+          { Raspon: "2018-2023", Num: 0 },
+        ];
+
+        var parseDate = d3.time.format("%Y-%m-%d").parse;
+
+        var deaths = data;
+        for (var i = 0; i < deaths.length; i++) {
+          for (var j = 0; j < godine.length; j++) {
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1889 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1896 &&
+              godine[j].Raspon == "1889-1896"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1897 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1904 &&
+              godine[j].Raspon == "1897-1904"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1905 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1912 &&
+              godine[j].Raspon == "1905-1912"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1913 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1920 &&
+              godine[j].Raspon == "1913-1920"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1921 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1928 &&
+              godine[j].Raspon == "1921-1928"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1929 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1936 &&
+              godine[j].Raspon == "1929-1936"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1937 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1944 &&
+              godine[j].Raspon == "1937-1944"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1945 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1952 &&
+              godine[j].Raspon == "1945-1952"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1953 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1960 &&
+              godine[j].Raspon == "1953-1960"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1961 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1968 &&
+              godine[j].Raspon == "1961-1968"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1969 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1976 &&
+              godine[j].Raspon == "1969-1976"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1977 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1984 &&
+              godine[j].Raspon == "1977-1984"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1985 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                1992 &&
+              godine[j].Raspon == "1985-1992"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                1993 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                2000 &&
+              godine[j].Raspon == "1993-2000"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                2001 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                2008 &&
+              godine[j].Raspon == "2001-2008"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                2009 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                2017 &&
+              godine[j].Raspon == "2009-2017"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) >=
+                2018 &&
+              parseInt(parseDate(deaths[i].Incident_date).getFullYear()) <=
+                2023 &&
+              godine[j].Raspon == "2018-2023"
+            ) {
+              godine[j].Num++;
+            }
+          }
+        }
+        console.log(godine);
+
+        var x = d3.scale
+          .ordinal()
+          .domain(
+            godine.map(function (d) {
+              return d.Raspon;
+            })
+          )
+          .rangeBands([0, width], -1);
+
+        var y = d3.scale
+          .linear()
+          .domain([
+            0,
+            d3.max(godine, function (d) {
+              return d.Num;
+            }),
+          ])
+          .range([height, 0]);
+
+        var yGridLine = d3.svg
+          .axis()
+          .scale(y)
+          .tickSize(-width, 0, 0)
+          .tickFormat("")
+          .orient("left");
+
+        var line = d3.svg
+          .line()
+          .x(function (d) {
+            return x(d.Raspon) + x.rangeBand() / 2;
+          })
+          .y(function (d) {
+            return y(d.Num);
+          });
+
+        var svg = d3
+          .select(".graf")
+          .append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.bottom + margin.top)
+          .style("background-color", "white")
+          .append("g")
+          .attr(
+            "transform",
+            "translate(" + margin.left + "," + margin.top + ")"
+          );
+
+        // Append the lines
+        svg
+          .append("path")
+          .datum(godine)
+          .attr("class", "line")
+          .attr("d", line)
+          .style("opacity", 0)
+          .attr("stroke", "steelblue")
+          .attr("stroke-width", 2)
+          .attr("fill", "none");
+
+        var path = svg.selectAll(".line");
+        var totalLength = path.node().getTotalLength();
+
+        path
+          .attr("stroke-dasharray", totalLength + " " + totalLength)
+          .attr("stroke-dashoffset", totalLength)
+          .transition()
+          .duration(7000) // Set the duration of the transition in milliseconds
+          .delay(500) // Optional delay before the transition starts
+          .ease("linear")
+          .attr("stroke-dashoffset", 0);
+
+        svg
+          .append("g")
+          .call(yGridLine)
+          .classed("gridLine", true)
+          .attr("transform", "translate(0, 0)");
+
+        var tooltip = d3
+          .select("body")
+          .append("div")
+          .attr("class", "tooltip")
+          .style("opacity", 0);
+
+        svg
+          .select(".line")
+          // .transition()
+          // .duration(2000) // Set the duration of the transition in milliseconds
+          // .delay(500) // Optional delay before the transition starts
+          .style("opacity", 1);
+
+        svg
+          .selectAll("myCircles")
+          .data(godine)
+          .enter()
+          .append("circle")
+          .attr("fill", "red")
+          .attr("stroke", "none")
+          .style("cursor", "pointer")
+          .attr("cx", function (d) {
+            return x(d.Raspon) + 63;
+          })
+          .attr("cy", function (d) {
+            return y(d.Num);
+          })
+          .attr("r", 4)
+          .on("mouseover", function (d) {
+            d3.select(this).transition().duration("50").attr("opacity", "0.85");
+            tooltip.transition().duration(200).style("opacity", 1);
+            tooltip
+              .text(d.Num)
+              .style("font-size", "22px")
+              .style("left", d3.event.pageX + 10 + "px")
+              .style("top", d3.event.pageY - 15 + "px");
+          })
+          .on("mouseout", function (d) {
+            d3.select(this).transition().duration("50").attr("opacity", "1");
+            tooltip.transition().duration(200).style("opacity", 0);
+          });
+
+        var xAxis = d3.svg.axis().scale(x).orient("bottom");
+        var yAxis = d3.svg.axis().scale(y).orient("left");
+
+        svg
+          .append("g")
+          .attr("class", "x-axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis)
+          .selectAll("text")
+          .style("text-anchor", "end")
+          .attr("transform", "translate(-12, 30), rotate(-90)");
+
+        svg
+          .append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+          .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", ".71em")
+          .style("text-anchor", "end");
+
+        svg
+          .append("text")
+          .attr("class", "x-label")
+          .attr("text-anchor", "end")
+          .attr("x", 550)
+          .attr("y", 400)
+          .attr("fill", "#ccc")
+          .text("Range of years");
+
+        svg
+          .append("text")
+          .attr("class", "y-label")
+          .attr("text-anchor", "end")
+          .attr("x", -45)
+          .attr("y", -60)
+          .attr("transform", "rotate(-90)")
+          .attr("fill", "#ccc")
+          .text("Number of deaths");
+      });
+    </script>
+  </body>
+</html>

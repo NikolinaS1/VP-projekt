@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="nav">
+      <a href="" class="logo"
+        >Mortality of football players during football matches in the period
+        1889 - today</a
+      >
+
+      <a href="viz3.html"
+        ><button class="button">
+          <span>Number of deaths over the years</span>
+        </button>
+      </a>
+    </nav>
+
+    <div class="map">
+      <div class="karta"></div>
+    </div>
+    <p class="wMap">
+      A map of the world showing all the countries where the death occurred
+    </p>
+    <p id="demo"></p>
+    <div class="grafovi">
+      <div class="gf1">
+        <p class="prvi">Number of deaths from certain causes of death</p>
+        <div class="checkbox-wrapper-2">
+          <input type="checkbox" class="box1" />
+          <label>Sort by causes of death</label>
+        </div>
+        <div class="graf1"></div>
+      </div>
+      <div class="gf2">
+        <p class="drugi">Number of deaths in certain age ranges</p>
+        <div class="checkbox-wrapper-2">
+          <input type="checkbox" class="box2" />
+          <label>Sort by player age</label>
+        </div>
+        <div class="graf2"></div>
+      </div>
+    </div>
+
+    <script>
+      var width = 850;
+      var height = 580;
+      const mapWidth = width;
+      const mapHeight = height - 100;
+      var deathsByCountry = [];
+      var deathsByCountryGraph = [];
+
+      const tooltip = d3
+        .select("body")
+        .append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+      var customColorScheme = [
+        "#fee8c8",
+        "#fdd49e",
+        "#fdbb84",
+        "#fc8d59",
+        "#ef6548",
+        "#d7301f",
+        "#b30000",
+        "#7f0000",
+        "#570000",
+      ];
+
+      var margin = { top: 10, bottom: 300, left: 110, right: 50 };
+      var width = 720 - margin.left - margin.right;
+      var height = 600 - margin.top - margin.bottom;
+      var barPadding = 6;
+
+      //skala za boje
+
+      var boje = d3.scale
+        .ordinal()
+        .domain([5, 10, 15, 20, 25, 30, 35, 40, 45])
+        .range(customColorScheme);
+
+      d3.json("deaths.json", function (error, data) {
+        var deaths = data;
+        for (var i = 0; i < deaths.length; i++) {
+          if (deathsByCountyContains(deaths[i].Team_country)) {
+            for (var j = 0; j < deathsByCountry.length; j++) {
+              if (deathsByCountry[j].Country == deaths[i].Team_country) {
+                deathsByCountry[j].Num++;
+              }
+            }
+          } else {
+            deathsByCountry.push({ Country: deaths[i].Team_country, Num: 1 });
+          }
+        }
+
+        var teamCountry = data.map(function (d) {
+          return d.Team_country;
+        });
+
+        var projection = d3.geo
+          .mercator()
+          .scale(110)
+          .translate([400, 250])
+          .rotate([-10, 0]);
+        var path = d3.geo.path().projection(projection);
+        var svg = d3
+          .select(".karta")
+          .append("svg")
+          .attr("width", mapWidth)
+          .attr("height", mapHeight)
+          .style("background", "white")
+          .attr("style", "outline: thin solid black;")
+          .style("border", 1);
+
+        //legenda
+
+        var keys = [
+          "<5 deaths",
+          "5-10 deaths",
+          "10-15 deaths",
+          "15-20 deaths",
+          "20-25 deaths",
+          "25-30 deaths",
+          "30-35 deaths",
+          "35-40 deaths",
+          "40+ deaths",
+        ];
+
+        var size = 20;
+        svg
+          .selectAll("mydots")
+          .data(keys)
+          .enter()
+          .append("rect")
+          .attr("x", 30)
+          .attr("y", function (d, i) {
+            return 250 + i * (size + 5);
+          }) // 250 is where the first dot appears. 25 is the distance between dots
+          .attr("width", size)
+          .attr("height", size)
+          .style("fill", function (d) {
+            return boje(d);
+          });
+
+        svg
+          .selectAll("mylabels")
+          .data(keys)
+          .enter()
+          .append("text")
+          .attr("x", 40 + size * 1.2)
+          .attr("y", function (d, i) {
+            return 250 + i * (size + 5) + size / 2;
+          })
+          .style("fill", function (d) {
+            return boje(d);
+          })
+          .text(function (d) {
+            return d;
+          })
+          .attr("text-anchor", "left")
+          .style("alignment-baseline", "middle");
+
+        d3.json("world.json", function (error, data) {
+          var data = topojson.feature(data, data.objects.countries);
+
+          var countries = svg
+            .selectAll("path.country")
+            .data(data.features)
+            .enter()
+            .append("path")
+            .attr("class", "country")
+            .attr("id", function (d) {
+              return d.properties.name;
+            })
+            .attr("d", path)
+            .style("fill", function (d) {
+              var color = "gray";
+              for (var i = 0; i < deathsByCountry.length; i++) {
+                if (deathsByCountry[i].Country == d.properties.name) {
+                  if (deathsByCountry[i].Num < 5) {
+                    return boje(5);
+                  }
+                  if (
+                    deathsByCountry[i].Num >= 5 &&
+                    deathsByCountry[i].Num < 10
+                  ) {
+                    return boje(10);
+                  }
+                  if (
+                    deathsByCountry[i].Num >= 10 &&
+                    deathsByCountry[i].Num < 15
+                  ) {
+                    return boje(15);
+                  }
+                  if (
+                    deathsByCountry[i].Num >= 15 &&
+                    deathsByCountry[i].Num < 20
+                  ) {
+                    return boje(20);
+                  }
+                  if (
+                    deathsByCountry[i].Num >= 20 &&
+                    deathsByCountry[i].Num < 25
+                  ) {
+                    return boje(25);
+                  }
+                  if (
+                    deathsByCountry[i].Num >= 25 &&
+                    deathsByCountry[i].Num < 30
+                  ) {
+                    return boje(30);
+                  }
+                  if (
+                    deathsByCountry[i].Num >= 30 &&
+                    deathsByCountry[i].Num < 35
+                  ) {
+                    return boje(35);
+                  }
+                  if (
+                    deathsByCountry[i].Num >= 35 &&
+                    deathsByCountry[i].Num < 40
+                  ) {
+                    return boje(40);
+                  }
+                  if (deathsByCountry[i].Num >= 40) {
+                    return boje(45);
+                  }
+                }
+              }
+            })
+            .style("fill-opacity", function (d) {
+              var opacity = 0.5;
+              for (var i = 0; i < teamCountry.length; i++) {
+                if (teamCountry[i] == d.properties.name) {
+                  opacity = 1;
+                }
+              }
+              return opacity;
+            })
+            .style("stroke", "white")
+            .style("stroke-width", 0.2)
+            .style("stroke-opacity", 1)
+            .on("mouseover", mouseOver)
+            .on("mouseleave", mouseLeave)
+            .on("click", clickCountry);
+        });
+
+        let mouseOver = function (d) {
+          for (var k = 0; k < teamCountry.length; k++) {
+            var countryName = d.properties.name;
+            if (teamCountry[k] == countryName) {
+              d3.selectAll("path.country")
+                .transition()
+                .duration(200)
+                .style("opacity", 0.5)
+                .style("stroke", "transparent");
+              d3.select(this)
+                .transition()
+                .duration(200)
+                .style("opacity", 1)
+                .style("stroke", "black");
+              tooltip
+                .style("left", d3.event.pageX + 15 + "px")
+                .style("top", d3.event.pageY - 28 + "px")
+                .transition()
+                .duration(400)
+                .style("opacity", 1)
+                .style("stroke", "transparent")
+                .style("stroke", "black")
+                .text(function () {
+                  var text = "";
+                  for (var i = 0; i < deathsByCountry.length; i++) {
+                    if (deathsByCountry[i].Country == d.properties.name) {
+                      text =
+                        deathsByCountry[i].Country +
+                        ": " +
+                        deathsByCountry[i].Num +
+                        " Deaths";
+                    }
+                  }
+                  return text;
+                });
+            }
+          }
+        };
+
+        let mouseLeave = function () {
+          d3.selectAll("path.country")
+            .transition()
+            .duration(200)
+            .style("opacity", 1)
+            .style("stroke", "transparent");
+          tooltip.transition().duration(300).style("opacity", 0);
+        };
+
+        let clickCountry = function (d) {
+          for (var i = 0; i < teamCountry.length; i++) {
+            var countryName = d.properties.name;
+
+            if (teamCountry[i] == countryName) {
+              updateData(countryName);
+            }
+          }
+        };
+
+        drawGraph1(data);
+        drawGraph2(data);
+      });
+
+      function drawGraph1(deaths, country) {
+        var barWidth = width / deaths.length - barPadding;
+
+        //var deaths = data;
+
+        for (var i = 0; i < deaths.length; i++) {
+          if (deathsByCountyContains(deaths[i].Team_country)) {
+            for (var j = 0; j < deathsByCountryGraph.length; j++) {
+              if (deathsByCountryGraph[j].Country == deaths[i].Team_country) {
+                deathsByCountryGraph[j].Num++;
+              }
+            }
+          } else {
+            deathsByCountryGraph.push({
+              Country: deaths[i].Team_country,
+              Num: 1,
+            });
+          }
+        }
+        var teamCountry = deaths.map(function (d) {
+          return d.Team_country;
+        });
+
+        //let params = new URL(document.location).searchParams;
+        //let country = params.get("country");
+
+        //dohvaćanje podataka vezanih za uzroke smrti
+        if (country) {
+          deaths = deaths.filter(function (item) {
+            return item.Team_country == country;
+          });
+        }
+
+        var uzroci = [
+          { Uzrok: "Heart related", Num: 0 },
+          { Uzrok: "Cardiac related", Num: 0 },
+          { Uzrok: "Collapsed", Num: 0 },
+          { Uzrok: "Lighting", Num: 0 },
+          { Uzrok: "Collision", Num: 0 },
+          { Uzrok: "Injuries", Num: 0 },
+          { Uzrok: "Other", Num: 0 },
+        ];
+        for (var i = 0; i < deaths.length; i++) {
+          for (var j = 0; j < uzroci.length; j++) {
+            if (
+              deaths[i].Heart_related > 0 &&
+              uzroci[j].Uzrok == "Heart related"
+            ) {
+              uzroci[j].Num += deaths[i].Heart_related;
+            }
+            if (
+              deaths[i].Cardiac_related > 0 &&
+              uzroci[j].Uzrok == "Cardiac related"
+            ) {
+              uzroci[j].Num += deaths[i].Cardiac_related;
+            }
+            if (deaths[i].Collapsed > 0 && uzroci[j].Uzrok == "Collapsed") {
+              uzroci[j].Num += deaths[i].Collapsed;
+            }
+            if (deaths[i].Lighting > 0 && uzroci[j].Uzrok == "Lighting") {
+              uzroci[j].Num += deaths[i].Lighting;
+            }
+            if (deaths[i].Collision > 0 && uzroci[j].Uzrok == "Collision") {
+              uzroci[j].Num += deaths[i].Collision;
+            }
+            if (deaths[i].Injuries > 0 && uzroci[j].Uzrok == "Injuries") {
+              uzroci[j].Num += deaths[i].Injuries;
+            }
+            if (deaths[i].Other > 0 && uzroci[j].Uzrok == "Other") {
+              uzroci[j].Num += deaths[i].Other;
+            }
+          }
+        }
+
+        uzroci.forEach(function (d, i) {
+          d.order = i;
+        });
+
+        //graf s uzrocima smrti
+
+        var x = d3.scale
+          .ordinal()
+          .domain(
+            uzroci.map(function (d) {
+              return d.Uzrok;
+            })
+          )
+          .rangeBands([0, width], 1);
+
+        var y = d3.scale
+          .linear()
+          .domain([
+            0,
+            d3.max(uzroci, function (d) {
+              return d.Num;
+            }),
+          ])
+          .range([height, 0]);
+
+        var svg1 = d3
+          .select(".graf1")
+          .append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.bottom + margin.top)
+          .style("background-color", "white")
+          .append("g")
+          .attr(
+            "transform",
+            "translate(" + margin.left + "," + margin.top + ")"
+          );
+
+        var xAxis = d3.svg.axis().scale(x).orient("bottom");
+
+        var yAxis = d3.svg.axis().scale(y).orient("left").ticks(10);
+
+        var yGridLine = d3.svg
+          .axis()
+          .scale(y)
+          .tickSize(-width, 0, 0)
+          .tickFormat("")
+          .orient("left");
+
+        svg1
+          .append("g")
+          .attr("class", "x-axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis)
+          .selectAll("text")
+          .style("text-anchor", "end")
+          .attr("transform", "translate(0, 30), rotate(-90)");
+
+        svg1
+          .append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+          .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", ".71em")
+          .style("text-anchor", "end");
+
+        svg1
+          .append("text")
+          .attr("class", "x-label")
+          .attr("text-anchor", "end")
+          .attr("x", 380)
+          .attr("y", 470)
+          .attr("fill", "#ccc")
+          .text("Causes of death");
+
+        svg1
+          .append("text")
+          .attr("class", "y-label")
+          .attr("text-anchor", "end")
+          .attr("x", -80)
+          .attr("y", -60)
+          .attr("transform", "rotate(-90)")
+          .attr("fill", "#ccc")
+          .text("Number of deaths");
+
+        svg1
+          .append("g")
+          .call(yGridLine)
+          .classed("gridLine", true)
+          .attr("transform", "translate(0, 0)");
+
+        var div = d3
+          .select("body")
+          .append("div")
+          .attr("class", "tooltip-donut")
+          .style("opacity", 0);
+
+        var barchart = svg1.selectAll("rect").data(uzroci);
+
+        barchart.exit().remove();
+
+        barchart
+          .enter()
+          .append("rect")
+          .attr("x", function (d) {
+            return x(d.Uzrok);
+          })
+          .attr("y", function (d) {
+            return y(d.Num);
+          })
+          .attr("height", function (d) {
+            return height - y(d.Num);
+          })
+          .attr("width", 30)
+          .attr("fill", function (d) {
+            if (d.Num < 5) {
+              return boje(5);
+            }
+            if (d.Num >= 5 && d.Num < 10) {
+              return boje(10);
+            }
+            if (d.Num >= 10 && d.Num < 15) {
+              return boje(15);
+            }
+            if (d.Num >= 15 && d.Num < 20) {
+              return boje(20);
+            }
+            if (d.Num >= 20 && d.Num < 25) {
+              return boje(25);
+            }
+            if (d.Num >= 25 && d.Num < 30) {
+              return boje(30);
+            }
+            if (d.Num >= 30 && d.Num < 35) {
+              return boje(35);
+            }
+            if (d.Num >= 35 && d.Num < 40) {
+              return boje(40);
+            }
+            if (d.Num >= 40) {
+              return boje(45);
+            }
+          })
+          .on("mouseover", function (d) {
+            for (var i = 0; i < deaths.length; i++) {
+              d3.select(this)
+                .transition()
+                .duration("50")
+                .attr("opacity", ".85");
+              div.transition().duration(50).style("opacity", 1);
+              div
+                .text(d.Num)
+                .style("left", d3.event.pageX + 10 + "px")
+                .style("top", d3.event.pageY - 15 + "px");
+            }
+          })
+          .on("mouseout", function (d, i) {
+            d3.select(this).transition().duration("50").attr("opacity", "1");
+            div.transition().duration("50").style("opacity", 0);
+          });
+
+        d3.select(".box1").on("change", toggleSort);
+
+        function toggleSort() {
+          var sortComparer;
+
+          if (this.checked) {
+            //sort by causes of death
+            sortComparer = function (a, b) {
+              return d3.descending(a.Num, b.Num);
+            };
+          } else {
+            //sort by original order
+            sortComparer = function (a, b) {
+              return d3.descending(b.order, a.order);
+            };
+          }
+
+          uzroci.sort(sortComparer);
+
+          var causesOrder = uzroci.map(function (d) {
+            return d.Uzrok;
+          });
+
+          x.domain(causesOrder);
+
+          svg1
+            .transition()
+            .duration(1000)
+            .selectAll("rect")
+            .attr("x", function (d) {
+              return x(d.Uzrok);
+            });
+          svg1
+            .select(".x-axis")
+            .transition()
+            .duration(1000)
+            .call(xAxis)
+            .selectAll("text")
+            .style("text-anchor", "end");
+        }
+      }
+
+      // graf s rasponom godina
+      function drawGraph2(deaths, country) {
+        var barWidth = width / deaths.length - barPadding;
+
+        //let params = new URL(document.location).searchParams;
+        //let country = params.get("country");
+
+        //dohvaćanje podataka vezanih za uzroke smrti
+        if (country) {
+          deaths = deaths.filter(function (item) {
+            return item.Team_country == country;
+          });
+        }
+
+        var godine = [
+          { Raspon: "Beetwen 11 and 20 years old", Num: 0 },
+          { Raspon: "Beetwen 21 and 30 years old", Num: 0 },
+          { Raspon: "Beetwen 31 and 40 years old", Num: 0 },
+          { Raspon: "Beetwen 41 and 50 years old", Num: 0 },
+          { Raspon: "50+ years old", Num: 0 },
+        ];
+
+        for (var i = 0; i < deaths.length; i++) {
+          for (var j = 0; j < godine.length; j++) {
+            if (
+              deaths[i].Player_age > 11 &&
+              deaths[i].Player_age < 20 &&
+              godine[j].Raspon == "Beetwen 11 and 20 years old"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              deaths[i].Player_age > 21 &&
+              deaths[i].Player_age < 30 &&
+              godine[j].Raspon == "Beetwen 21 and 30 years old"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              deaths[i].Player_age > 31 &&
+              deaths[i].Player_age < 40 &&
+              godine[j].Raspon == "Beetwen 31 and 40 years old"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              deaths[i].Player_age > 41 &&
+              deaths[i].Player_age < 50 &&
+              godine[j].Raspon == "Beetwen 41 and 50 years old"
+            ) {
+              godine[j].Num++;
+            }
+            if (
+              deaths[i].Player_age > 50 &&
+              godine[j].Raspon == "50+ years old"
+            ) {
+              godine[j].Num++;
+            }
+          }
+        }
+
+        console.log(godine);
+
+        godine.forEach(function (d, i) {
+          d.order = i;
+        });
+
+        var x = d3.scale
+          .ordinal()
+          .domain(
+            godine.map(function (d) {
+              return d.Raspon;
+            })
+          )
+          .rangeBands([0, width], 1);
+
+        var y = d3.scale
+          .linear()
+          .domain([
+            0,
+            d3.max(godine, function (d) {
+              return d.Num;
+            }),
+          ])
+          .range([height, 0]);
+
+        var svg2 = d3
+          .select(".graf2")
+          .append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.bottom + margin.top)
+          .style("background-color", "white")
+          .append("g")
+          .attr(
+            "transform",
+            "translate(" + margin.left + "," + margin.top + ")"
+          );
+
+        var xAxis = d3.svg.axis().scale(x).orient("bottom");
+
+        var yAxis = d3.svg.axis().scale(y).orient("left").ticks(10);
+
+        var yGridLine = d3.svg
+          .axis()
+          .scale(y)
+          .tickSize(-width, 0, 0)
+          .tickFormat("")
+          .orient("left");
+
+        svg2
+          .append("g")
+          .attr("class", "x-axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis)
+          .selectAll("text")
+          .style("text-anchor", "end")
+          .attr("transform", "translate(0, 30), rotate(-90)");
+
+        svg2
+          .append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+          .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", ".71em")
+          .style("text-anchor", "end");
+
+        svg2
+          .append("text")
+          .attr("class", "x-label")
+          .attr("text-anchor", "end")
+          .attr("x", 380)
+          .attr("y", 560)
+          .attr("fill", "#ccc")
+          .text("Player age");
+
+        svg2
+          .append("text")
+          .attr("class", "y-label")
+          .attr("text-anchor", "end")
+          .attr("x", -80)
+          .attr("y", -60)
+          .attr("transform", "rotate(-90)")
+          .attr("fill", "#ccc")
+          .text("Number of deaths");
+
+        svg2
+          .append("g")
+          .call(yGridLine)
+          .classed("gridLine", true)
+          .attr("transform", "translate(0, 0)");
+
+        var div = d3
+          .select("body")
+          .append("div")
+          .attr("class", "tooltip-donut")
+          .style("opacity", 0);
+
+        var barchart = svg2
+          .selectAll("rect")
+          .data(godine)
+          .enter()
+          .append("rect")
+          .attr("x", function (d) {
+            return x(d.Raspon);
+          })
+          .attr("y", function (d) {
+            return y(d.Num);
+          })
+          .attr("height", function (d) {
+            return height - y(d.Num);
+          })
+          .attr("width", 30)
+          .attr("fill", function (d) {
+            if (d.Num < 5) {
+              return boje(5);
+            }
+            if (d.Num >= 5 && d.Num < 10) {
+              return boje(10);
+            }
+            if (d.Num >= 10 && d.Num < 15) {
+              return boje(15);
+            }
+            if (d.Num >= 15 && d.Num < 20) {
+              return boje(20);
+            }
+            if (d.Num >= 20 && d.Num < 25) {
+              return boje(25);
+            }
+            if (d.Num >= 25 && d.Num < 30) {
+              return boje(30);
+            }
+            if (d.Num >= 30 && d.Num < 35) {
+              return boje(35);
+            }
+            if (d.Num >= 35 && d.Num < 40) {
+              return boje(40);
+            }
+            if (d.Num >= 40) {
+              return boje(45);
+            }
+          })
+          .on("mouseover", function (d) {
+            for (var i = 0; i < deaths.length; i++) {
+              d3.select(this)
+                .transition()
+                .duration("50")
+                .attr("opacity", ".85");
+              div.transition().duration(50).style("opacity", 1);
+              div
+                .text(d.Num)
+                .style("left", d3.event.pageX + 10 + "px")
+                .style("top", d3.event.pageY - 15 + "px");
+            }
+          })
+          .on("mouseout", function (d, i) {
+            d3.select(this).transition().duration("50").attr("opacity", "1");
+            div.transition().duration("50").style("opacity", 0);
+          });
+
+        d3.select(".box2").on("change", toggleSort);
+
+        function toggleSort() {
+          var sortComparer;
+
+          if (this.checked) {
+            //sort by causes of death
+            sortComparer = function (a, b) {
+              return d3.descending(a.Num, b.Num);
+            };
+          } else {
+            //sort by original order
+            sortComparer = function (a, b) {
+              return d3.descending(b.order, a.order);
+            };
+          }
+
+          godine.sort(sortComparer);
+
+          var causesOrder = godine.map(function (d) {
+            return d.Raspon;
+          });
+
+          x.domain(causesOrder);
+
+          svg2
+            .transition()
+            .duration(1000)
+            .selectAll("rect")
+            .attr("x", function (d) {
+              return x(d.Raspon);
+            });
+          svg2
+            .select(".x-axis")
+            .transition()
+            .duration(1000)
+            .call(xAxis)
+            .selectAll("text")
+            .style("text-anchor", "end");
+        }
+      }
+
+      function deathsByCountyContains(country) {
+        var contains = false;
+        for (var i = 0; i < deathsByCountry.length; i++) {
+          if (deathsByCountry[i].Country == country) {
+            contains = true;
+          }
+        }
+        return contains;
+      }
+
+      function updateData(country) {
+        d3.json("deaths.json", function (error, data) {
+          d3.select(".graf1").selectAll("svg").remove();
+          d3.select(".graf2").selectAll("svg").remove();
+
+          drawGraph1(data, country);
+          drawGraph2(data, country);
+
+          document.getElementsByClassName("box1")[0].checked = false;
+          document.getElementsByClassName("box2")[0].checked = false;
+
+          document.getElementById("demo").innerHTML =
+            "Selected country: " + country;
+        });
+      }
+    </script>
+  </body>
+</html>
